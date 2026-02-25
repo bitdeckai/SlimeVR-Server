@@ -46,3 +46,7 @@ local.properties
 
 # Ignore temporary config
 vrconfig.yml.tmp
+
+# Local Java runtime (too large for git)
+jdk17.zip
+jdk17/
