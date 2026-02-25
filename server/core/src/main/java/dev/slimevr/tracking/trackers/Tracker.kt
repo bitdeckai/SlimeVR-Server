@@ -123,6 +123,12 @@ class Tracker @JvmOverloads constructor(
 	var customName: String? = null
 	var magStatus: MagnetometerStatus = magStatus
 		private set
+	
+	/**
+	 * When true the server will write this tracker's IMU data to CSV files.
+	 * Can be toggled per-tracker via RPC and by the global request.
+	 */
+	var logImuData: Boolean = true
 
 	/**
 	 * Watch the rest calibration status
@@ -425,6 +431,12 @@ class Tracker @JvmOverloads constructor(
 	/**
 	 * Gets the magnetic field vector, in mGauss.
 	 */
+
+	/**
+	 * Convenience helper used by the datafeed logger.
+	 */
+	fun isImuLogging(): Boolean = isImu() && logImuData
+	
 	fun getMagVector() = if (allowReset) {
 		resetsHandler.getReferenceAdjustedAccel(_rotation, _magVector)
 	} else {

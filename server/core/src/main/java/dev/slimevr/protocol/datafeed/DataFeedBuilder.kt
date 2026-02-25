@@ -31,6 +31,11 @@ import solarxr_protocol.datatypes.math.Quat
 import solarxr_protocol.datatypes.math.Vec3f
 import java.nio.ByteBuffer
 import java.util.function.Consumer
+import java.io.File
+import java.io.FileWriter
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.concurrent.ConcurrentHashMap
 
 fun createHardwareInfo(fbb: FlatBufferBuilder, device: Device): Int {
 	val nameOffset = if (device.firmwareVersion != null) {
@@ -166,6 +171,9 @@ fun createTrackerInfos(
 	TrackerInfo.addMagnetometer(fbb, tracker.magStatus.getSolarType())
 	TrackerInfo.addIsHmd(fbb, tracker.isHmd)
 
+	// per-tracker IMU logging flag (CSV export)
+	TrackerInfo.addLogImuData(fbb, tracker.logImuData)
+
 	TrackerInfo.addDataSupport(fbb, tracker.trackerDataType.getSolarType())
 
 	return TrackerInfo.endTrackerInfo(fbb)
@@ -279,6 +287,52 @@ fun createTrackerData(
 	return TrackerData.endTrackerData(fbb)
 }
 
+// writers keyed by sanitized tracker name (one file per tracker)
+private val imuWriters: MutableMap<String, FileWriter> = ConcurrentHashMap()
+private val imuSessionDir: File by lazy {
+	val sessionTimestamp = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+	File(resolveImuLogDir(), sessionTimestamp).apply { mkdirs() }
+}
+
+private fun resolveImuLogDir(): File {
+	val cwd = File(System.getProperty("user.dir")).absoluteFile
+	var dir: File? = cwd
+	while (dir != null) {
+		val marker = File(dir, "settings.gradle.kts")
+		val libsDir = File(dir, "server/desktop/build/libs")
+		if (marker.exists() && libsDir.exists()) {
+			return File(libsDir, "imu-logs")
+		}
+		dir = dir.parentFile
+	}
+	return File(cwd, "imu-logs")
+}
+
+private fun logImuForTracker(tracker: Tracker) {
+    // choose a human-friendly filename based on tracker names
+    val baseName = when {
+        tracker.customName?.isNotBlank() == true -> tracker.customName!!
+        tracker.displayName.isNotBlank() -> tracker.displayName
+        else -> "Tracker${tracker.trackerNum}"
+    }
+    val safeName = baseName.replace(Regex("[^a-zA-Z0-9_-]"), "_")
+    val writer = imuWriters.computeIfAbsent(safeName) {
+        val ts = SimpleDateFormat("yyyyMMdd_HHmmss_SSS").format(Date())
+		val file = File(imuSessionDir, "${safeName}_$ts.csv")
+        file.parentFile?.mkdirs()
+        FileWriter(file, true).apply {
+            // log timestamp + accel + rotation quaternion
+            write("timestamp_ms,accel_x,accel_y,accel_z,rot_x,rot_y,rot_z,rot_w\n")
+            System.out.println("IMU CSV logging to ${file.absolutePath}")
+        }
+    }
+    val now = System.currentTimeMillis()
+    val accel = tracker.getAcceleration()
+    val rot = tracker.getRawRotation()
+    writer.write("$now,${accel.x},${accel.y},${accel.z},${rot.x},${rot.y},${rot.z},${rot.w}\n")
+    writer.flush()
+}
+
 fun createTrackersData(
 	fbb: FlatBufferBuilder,
 	mask: DeviceDataMaskT,
@@ -291,6 +345,9 @@ fun createTrackersData(
 	device
 		.trackers
 		.forEach { (_: Int, value: Tracker) ->
+			if (value.isImu()) {
+				logImuForTracker(value)
+			}
 			trackersOffsets
 				.add(createTrackerData(fbb, mask.trackerData, value))
 		}

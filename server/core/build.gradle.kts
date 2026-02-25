@@ -96,6 +96,12 @@ dependencies {
 	testImplementation("org.junit.platform:junit-platform-launcher")
 }
 
+tasks.named("compileKotlin") {
+	dependsOn(":solarxr-protocol:jar")
+}
+
+
+
 tasks.test {
 	useJUnitPlatform()
 }
