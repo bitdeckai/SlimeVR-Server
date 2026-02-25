@@ -39,4 +39,8 @@ include(":server")
 project(":server").projectDir = File("server")
 include(":server:core")
 include(":server:desktop")
-include(":server:android")
+// do not include Android module when skipAndroid project property is true
+val skipAndroid = gradle.startParameter.projectProperties["skipAndroid"]?.toString()?.toBoolean() ?: false
+if (!skipAndroid) {
+    include(":server:android")
+}

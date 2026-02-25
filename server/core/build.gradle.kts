@@ -17,17 +17,19 @@ plugins {
 // FIXME: Please replace these to Java 11 as that's what they actually are
 kotlin {
 	jvmToolchain {
-		languageVersion.set(JavaLanguageVersion.of(17))
+		// downgraded to JDK 20 to avoid missing Java 17 toolchain
+		languageVersion.set(JavaLanguageVersion.of(20))
 	}
 }
 java {
 	toolchain {
-		languageVersion.set(JavaLanguageVersion.of(17))
+		//languageVersion.set(JavaLanguageVersion.of(17))
+		languageVersion.set(JavaLanguageVersion.of(20))
 	}
 }
 tasks.withType<KotlinCompile> {
 	compilerOptions {
-		jvmTarget.set(JvmTarget.JVM_17)
+		jvmTarget.set(JvmTarget.JVM_20)
 		freeCompilerArgs.set(listOf("-Xvalue-classes"))
 	}
 }
