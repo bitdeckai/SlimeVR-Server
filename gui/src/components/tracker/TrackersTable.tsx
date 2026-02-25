@@ -3,7 +3,9 @@ import { IPv4 } from 'ip-num/IPNumber';
 import { createContext, ReactNode, useContext, useMemo } from 'react';
 import { useConfig } from '@/hooks/config';
 import { useTracker } from '@/hooks/tracker';
+import { useWebsocketAPI } from '@/hooks/websocket-api';
 import { BodyPartIcon } from '@/components/commons/BodyPartIcon';
+import { CheckboxInternal } from '@/components/commons/Checkbox';
 import { Typography } from '@/components/commons/Typography';
 import { formatVector3 } from '@/utils/formatting';
 import { TrackerBattery } from './TrackerBattery';
@@ -15,8 +17,12 @@ import { Tooltip } from '@/components/commons/Tooltip';
 import { WarningIcon } from '@/components/commons/icon/WarningIcon';
 import { FirmwareIcon } from '@/components/commons/FirmwareIcon';
 import {
+  AssignTrackerRequestT,
   BodyPart,
+  DeviceIdT,
+  RpcMessage,
   TrackerDataT,
+  TrackerIdT,
   TrackerStatus as TrackerStatusEnum,
   TrackingChecklistStepT,
 } from 'solarxr-protocol';
@@ -178,10 +184,29 @@ function Row({
   gridTemplateColumns: string;
 }) {
   const { config } = useConfig();
+  const { sendRPCPacket } = useWebsocketAPI();
   const fontColor = config?.devSettings?.highContrast ? 'primary' : 'secondary';
   const moreInfo = config?.devSettings?.moreInfo;
 
   const { tracker, device } = data;
+  const isImuTracker = !!tracker.info?.isImu;
+  const imuLogEnabled = tracker.info?.logImuData ?? true;
+
+  const setImuLogEnabled = (enabled: boolean) => {
+    const trackerNum = tracker.trackerId?.trackerNum;
+    if (trackerNum == null) return;
+
+    const req = new AssignTrackerRequestT();
+    req.trackerId = new TrackerIdT(
+      tracker.trackerId?.deviceId?.id != null
+        ? new DeviceIdT(tracker.trackerId.deviceId.id)
+        : null,
+      trackerNum
+    );
+    req.logImuData = enabled;
+
+    sendRPCPacket(RpcMessage.AssignTrackerRequest, req);
+  };
 
   const warning =
     !!highlightedTrackers?.trackers.find(
@@ -265,11 +290,36 @@ function Row({
                 color={fontColor}
               />
             </Cell>
-            <Cell last={!moreInfo}>
+            <Cell>
               {tracker?.temp && tracker?.temp?.temp != 0 && (
                 <Typography color={fontColor} whitespace="whitespace-nowrap">
                   {tracker.temp.temp.toFixed(2)}
                 </Typography>
+              )}
+            </Cell>
+            <Cell last={!moreInfo}>
+              {isImuTracker && (
+                <div
+                  className="flex justify-center w-full"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                  }}
+                  onMouseDown={(event) => {
+                    event.stopPropagation();
+                  }}
+                >
+                  <CheckboxInternal
+                    variant="toggle"
+                    name={`imu-log-${tracker.trackerId?.deviceId?.id ?? 'na'}-${
+                      tracker.trackerId?.trackerNum ?? 'na'
+                    }`}
+                    checked={imuLogEnabled}
+                    onChange={(event) => {
+                      event.stopPropagation?.();
+                      setImuLogEnabled(event.currentTarget.checked);
+                    }}
+                  />
+                </div>
               )}
             </Cell>
             <Cell show={moreInfo}>
@@ -340,6 +390,7 @@ export function TrackersTable({
       '5rem', // TPS
       config?.devSettings?.preciseRotation ? '11rem' : '9rem', // Rotation
       '9rem', // Temp
+      '6rem', // IMU Log
     ];
 
     if (moreInfo) {
@@ -362,7 +413,14 @@ export function TrackersTable({
           <Header name={'tracker-table-column-ping'} />
           <Header name={'tracker-table-column-tps'} />
           <Header name={'tracker-table-column-rotation'} />
-          <Header name={'tracker-table-column-temperature'} last={!moreInfo} />
+          <Header name={'tracker-table-column-temperature'} />
+          <div
+            className={classNames('text-start px-2 flex items-center', {
+              'pr-4': !moreInfo,
+            })}
+          >
+            <Typography whitespace="whitespace-nowrap">IMU Log</Typography>
+          </div>
           <Header
             name={'tracker-table-column-linear-acceleration'}
             show={moreInfo}

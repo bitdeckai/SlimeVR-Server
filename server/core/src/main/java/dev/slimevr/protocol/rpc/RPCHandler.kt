@@ -316,6 +316,11 @@ class RPCHandler(private val api: ProtocolAPI) : ProtocolHandler<RpcMessageHeade
 			tracker.resetsHandler.allowDriftCompensation = req.allowDriftCompensation()
 		}
 
+		// per-tracker IMU logging flag from assignment request
+		if (req.logImuData() != null) {
+			tracker.logImuData = req.logImuData()
+		}
+
 		api.server.trackerUpdated(tracker)
 	}
 

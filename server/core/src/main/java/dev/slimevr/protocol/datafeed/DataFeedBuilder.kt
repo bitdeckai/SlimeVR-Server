@@ -345,7 +345,7 @@ fun createTrackersData(
 	device
 		.trackers
 		.forEach { (_: Int, value: Tracker) ->
-			if (value.isImu()) {
+			if (value.isImuLogging()) {
 				logImuForTracker(value)
 			}
 			trackersOffsets
