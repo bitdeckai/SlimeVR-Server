@@ -64,7 +64,9 @@
       "signingIdentity": null,
       "providerShortName": null
     },
-    "resources": [],
+    "resources": [
+      "../../server/desktop/build/libs/slimevr.jar"
+    ],
     "shortDescription": "",
     "licenseFile": "../../LICENSE-MIT"
   },
