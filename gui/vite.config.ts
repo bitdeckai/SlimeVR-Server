@@ -6,15 +6,10 @@ import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
 import jotaiReactRefresh from 'jotai/babel/plugin-react-refresh';
 
+const fixedVersionTag = 'v18.2.0-logIMU';
 const commitHash = execSync('git rev-parse --verify --short HEAD').toString().trim();
-const versionTag = execSync('git --no-pager tag --sort -taggerdate --points-at HEAD')
-  .toString()
-  .split('\n')[0]
-  .trim();
-// If not empty then it's not clean
-const gitCleanString = execSync('git status --porcelain').toString();
-const gitClean = gitCleanString ? false : true;
-if (!gitClean) console.log('Git is dirty because of:\n' + gitCleanString);
+const versionTag = fixedVersionTag;
+const gitClean = true;
 
 console.log(`version is ${versionTag || commitHash}${gitClean ? '' : '-dirty'}`);
 

@@ -1,6 +1,6 @@
 {
   "build": {
-    "beforeBuildCommand": "pnpm run build",
+    "beforeBuildCommand": "pnpm run build && powershell -Command \"Copy-Item -Path '../../server/desktop/build/libs/slimevr.jar' -Destination './slimevr.jar' -Force\"",
     "beforeDevCommand": "pnpm run start",
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173"

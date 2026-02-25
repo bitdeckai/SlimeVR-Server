@@ -289,6 +289,7 @@ fun createTrackerData(
 
 // writers keyed by sanitized tracker name (one file per tracker)
 private val imuWriters: MutableMap<String, FileWriter> = ConcurrentHashMap()
+private val lastLoggedImuUpdateNanos: MutableMap<Int, Long> = ConcurrentHashMap()
 private val imuSessionDir: File by lazy {
 	val sessionTimestamp = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
 	File(resolveImuLogDir(), sessionTimestamp).apply { mkdirs() }
@@ -333,6 +334,24 @@ private fun logImuForTracker(tracker: Tracker) {
     writer.flush()
 }
 
+fun tickImuCsvLogging(devices: Collection<Device>) {
+	devices.forEach { device ->
+		device.trackers.forEach { (_: Int, tracker: Tracker) ->
+			if (!tracker.isImuLogging()) return@forEach
+
+			val updateNanos = tracker.imuDataUpdateNanos
+			if (updateNanos == 0L) return@forEach
+
+			val key = tracker.device?.id?.toInt() ?: tracker.trackerNum
+			val lastLogged = lastLoggedImuUpdateNanos[key]
+			if (lastLogged == updateNanos) return@forEach
+
+			lastLoggedImuUpdateNanos[key] = updateNanos
+			logImuForTracker(tracker)
+		}
+	}
+}
+
 fun createTrackersData(
 	fbb: FlatBufferBuilder,
 	mask: DeviceDataMaskT,
@@ -345,9 +364,6 @@ fun createTrackersData(
 	device
 		.trackers
 		.forEach { (_: Int, value: Tracker) ->
-			if (value.isImuLogging()) {
-				logImuForTracker(value)
-			}
 			trackersOffsets
 				.add(createTrackerData(fbb, mask.trackerData, value))
 		}

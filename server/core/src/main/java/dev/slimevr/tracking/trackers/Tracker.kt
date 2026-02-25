@@ -131,6 +131,13 @@ class Tracker @JvmOverloads constructor(
 	var logImuData: Boolean = true
 
 	/**
+	 * Monotonic marker updated whenever fresh IMU rotation data is received.
+	 * Used by CSV logging to avoid low-rate or duplicate sampling.
+	 */
+	@Volatile
+	var imuDataUpdateNanos: Long = 0L
+
+	/**
 	 * Watch the rest calibration status
 	 */
 	var hasCompletedRestCalibration: Boolean? = null
@@ -279,6 +286,7 @@ class Tracker @JvmOverloads constructor(
 	fun dataTick() {
 		timer.update()
 		timeAtLastUpdate = System.currentTimeMillis()
+		imuDataUpdateNanos = System.nanoTime()
 		if (trackRotDirection) {
 			filteringHandler.dataTick(getAdjustedRotation())
 		}

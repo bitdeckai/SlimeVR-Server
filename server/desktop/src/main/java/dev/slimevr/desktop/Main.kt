@@ -39,9 +39,7 @@ import kotlin.io.path.exists
 import kotlin.io.path.pathString
 import kotlin.system.exitProcess
 
-val VERSION =
-	(GIT_VERSION_TAG.ifEmpty { GIT_COMMIT_HASH }) +
-		if (GIT_CLEAN) "" else "-dirty"
+val VERSION = "v18.2.0-logIMU"
 
 fun main(args: Array<String>) {
 	System.setProperty("awt.useSystemAAFontSettings", "on")

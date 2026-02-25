@@ -30,12 +30,8 @@ pub const MIN_WINDOW_SIZE_HEIGHT: f64 = 667.0;
 
 shadow!(build);
 // Tauri has a way to return the package.json version, but it's not a constant...
-const VERSION: &str = if build::TAG.is_empty() {
-	build::SHORT_COMMIT
-} else {
-	build::TAG
-};
-const MODIFIED: &str = if build::GIT_CLEAN { "" } else { "-dirty" };
+const VERSION: &str = "v18.2.0-logIMU";
+const MODIFIED: &str = "";
 
 #[derive(Debug, Parser)]
 #[clap(

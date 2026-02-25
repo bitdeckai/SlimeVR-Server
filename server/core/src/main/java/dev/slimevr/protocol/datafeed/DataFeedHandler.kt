@@ -22,6 +22,9 @@ class DataFeedHandler(private val api: ProtocolAPI) : ProtocolHandler<DataFeedMe
 	init {
 		registerPacketListener(DataFeedMessage.StartDataFeed, ::onStartDataFeed)
 		registerPacketListener(DataFeedMessage.PollDataFeed, ::onPollDataFeedRequest)
+		this.api.server.addOnTick {
+			tickImuCsvLogging(this.api.server.deviceManager.devices)
+		}
 		this.api.server.addOnTick { this.sendDataFeedUpdate() }
 	}
 
