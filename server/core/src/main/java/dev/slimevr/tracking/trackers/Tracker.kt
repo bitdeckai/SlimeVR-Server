@@ -128,7 +128,7 @@ class Tracker @JvmOverloads constructor(
 	 * When true the server will write this tracker's IMU data to CSV files.
 	 * Can be toggled per-tracker via RPC and by the global request.
 	 */
-	var logImuData: Boolean = true
+	var logImuData: Boolean = false
 
 	/**
 	 * Monotonic marker updated whenever fresh IMU rotation data is received.

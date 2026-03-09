@@ -177,36 +177,21 @@ function Row({
   highlightedTrackers,
   clickedTracker,
   gridTemplateColumns,
+  onSetImuLogEnabled,
 }: {
   data: FlatDeviceTracker;
   highlightedTrackers: highlightedTrackers | undefined;
   clickedTracker: (tracker: TrackerDataT) => void;
   gridTemplateColumns: string;
+  onSetImuLogEnabled: (tracker: TrackerDataT, enabled: boolean) => void;
 }) {
   const { config } = useConfig();
-  const { sendRPCPacket } = useWebsocketAPI();
   const fontColor = config?.devSettings?.highContrast ? 'primary' : 'secondary';
   const moreInfo = config?.devSettings?.moreInfo;
 
   const { tracker, device } = data;
   const isImuTracker = !!tracker.info?.isImu;
-  const imuLogEnabled = tracker.info?.logImuData ?? true;
-
-  const setImuLogEnabled = (enabled: boolean) => {
-    const trackerNum = tracker.trackerId?.trackerNum;
-    if (trackerNum == null) return;
-
-    const req = new AssignTrackerRequestT();
-    req.trackerId = new TrackerIdT(
-      tracker.trackerId?.deviceId?.id != null
-        ? new DeviceIdT(tracker.trackerId.deviceId.id)
-        : null,
-      trackerNum
-    );
-    req.logImuData = enabled;
-
-    sendRPCPacket(RpcMessage.AssignTrackerRequest, req);
-  };
+  const imuLogEnabled = tracker.info?.logImuData ?? false;
 
   const warning =
     !!highlightedTrackers?.trackers.find(
@@ -316,7 +301,7 @@ function Row({
                     checked={imuLogEnabled}
                     onChange={(event) => {
                       event.stopPropagation?.();
-                      setImuLogEnabled(event.currentTarget.checked);
+                      onSetImuLogEnabled(tracker, event.currentTarget.checked);
                     }}
                   />
                 </div>
@@ -362,6 +347,7 @@ export function TrackersTable({
   flatTrackers: FlatDeviceTracker[];
 }) {
   const { config } = useConfig();
+  const { sendRPCPacket } = useWebsocketAPI();
   const { highlightedTrackers } = useTrackingChecklist();
 
   const filteringEnabled =
@@ -380,6 +366,27 @@ export function TrackersTable({
   }, [flatTrackers, filteringEnabled, sortingEnabled]);
 
   const moreInfo = config?.devSettings?.moreInfo;
+
+  const setImuLogEnabled = (tracker: TrackerDataT, enabled: boolean) => {
+    const trackerNum = tracker.trackerId?.trackerNum;
+    if (trackerNum == null) return;
+
+    const req = new AssignTrackerRequestT();
+    req.trackerId = new TrackerIdT(
+      tracker.trackerId?.deviceId?.id != null
+        ? new DeviceIdT(tracker.trackerId.deviceId.id)
+        : null,
+      trackerNum
+    );
+    req.logImuData = enabled;
+
+    sendRPCPacket(RpcMessage.AssignTrackerRequest, req);
+  };
+
+  const imuTrackers = filteredSortedTrackers.filter((t) => t.tracker.info?.isImu);
+  const allImuLogEnabled =
+    imuTrackers.length > 0 &&
+    imuTrackers.every((t) => (t.tracker.info?.logImuData ?? false) === true);
 
   const gridTemplateColumns = useMemo(() => {
     const cols = [
@@ -419,7 +426,22 @@ export function TrackersTable({
               'pr-4': !moreInfo,
             })}
           >
-            <Typography whitespace="whitespace-nowrap">IMU Log</Typography>
+            <div className="flex items-center gap-2">
+              <Typography whitespace="whitespace-nowrap">IMU Log</Typography>
+              {imuTrackers.length > 0 && (
+                <CheckboxInternal
+                  variant="toggle"
+                  name="imu-log-all"
+                  checked={allImuLogEnabled}
+                  onChange={(event) => {
+                    const enabled = event.currentTarget.checked;
+                    imuTrackers.forEach((item) => {
+                      setImuLogEnabled(item.tracker, enabled);
+                    });
+                  }}
+                />
+              )}
+            </div>
           </div>
           <Header
             name={'tracker-table-column-linear-acceleration'}
@@ -441,6 +463,7 @@ export function TrackersTable({
               data={data}
               highlightedTrackers={highlightedTrackers}
               gridTemplateColumns={gridTemplateColumns}
+              onSetImuLogEnabled={setImuLogEnabled}
             />
           ))}
         </div>

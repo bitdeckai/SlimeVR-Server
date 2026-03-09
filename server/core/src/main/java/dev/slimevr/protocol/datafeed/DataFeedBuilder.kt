@@ -331,7 +331,8 @@ private fun logImuForTracker(tracker: Tracker) {
 	val timeMs = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(Date(now))
     val accel = tracker.getAcceleration()
     val rot = tracker.getRawRotation()
-	writer.write("$now,$timeMs,${accel.x},${accel.y},${accel.z},${rot.x},${rot.y},${rot.z},${rot.w}\n")
+	// Prefix with apostrophe so spreadsheet apps keep this field as text and don't strip milliseconds.
+	writer.write("$now,'$timeMs,${accel.x},${accel.y},${accel.z},${rot.x},${rot.y},${rot.z},${rot.w}\n")
     writer.flush()
 }
 
