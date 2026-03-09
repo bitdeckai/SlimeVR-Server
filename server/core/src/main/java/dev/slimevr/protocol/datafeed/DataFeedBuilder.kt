@@ -323,14 +323,15 @@ private fun logImuForTracker(tracker: Tracker) {
         file.parentFile?.mkdirs()
         FileWriter(file, true).apply {
             // log timestamp + accel + rotation quaternion
-            write("timestamp_ms,accel_x,accel_y,accel_z,rot_x,rot_y,rot_z,rot_w\n")
+			write("timestamp_ms,time_ms,accel_x,accel_y,accel_z,rot_x,rot_y,rot_z,rot_w\n")
             System.out.println("IMU CSV logging to ${file.absolutePath}")
         }
     }
     val now = System.currentTimeMillis()
+	val timeMs = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(Date(now))
     val accel = tracker.getAcceleration()
     val rot = tracker.getRawRotation()
-    writer.write("$now,${accel.x},${accel.y},${accel.z},${rot.x},${rot.y},${rot.z},${rot.w}\n")
+	writer.write("$now,$timeMs,${accel.x},${accel.y},${accel.z},${rot.x},${rot.y},${rot.z},${rot.w}\n")
     writer.flush()
 }
 

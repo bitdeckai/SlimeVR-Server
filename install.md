@@ -146,7 +146,21 @@ The repository includes a `rust-toolchain.toml` file; the default channel `1.89`
 
 This `install.MD` contains all the commands used during the setup process. Adjust paths and versions as needed for your environment.
 
-## 8. package exe file
+## 8. debug
+
+```powershell
+# open two terminals
+
+# terminal 1: launch server
+cd e:\0_project\SlimeVR\code\SlimeVR-Server\server\desktop\build\libs
+java -jar slimevr.jar run
+
+# terminal 2: start GUI in dev mode (from project root or gui folder)
+cd e:\0_project\SlimeVR\code\SlimeVR-Server\gui
+pnpm run dev
+```
+
+## 9. package exe file
 
 cd e:\0_project\SlimeVR\code\SlimeVR-Server
 .\gradlew.bat :server:desktop:shadowJar -x :server:android:compileDebugJavaWithJavac
